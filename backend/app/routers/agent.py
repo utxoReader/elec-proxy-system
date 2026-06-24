@@ -95,8 +95,11 @@ def create_agent(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    obj = svc.create_agent(db, payload)
-    return ApiResponse(message="Created", data={"id": obj["id"]})
+    try:
+        obj = svc.create_agent(db, payload)
+        return ApiResponse(message="Created", data={"id": obj["id"]})
+    except ValueError as e:
+        return ApiResponse(success=False, message=str(e))
 
 
 @router.put("/agent/update", response_model=ApiResponse)
@@ -105,10 +108,13 @@ def update_agent(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    obj = svc.update_agent(db, payload)
-    if not obj:
-        return ApiResponse(success=False, message="Not found")
-    return ApiResponse(message="Updated", data={"id": obj["id"]})
+    try:
+        obj = svc.update_agent(db, payload)
+        if not obj:
+            return ApiResponse(success=False, message="Not found")
+        return ApiResponse(message="Updated", data={"id": obj["id"]})
+    except ValueError as e:
+        return ApiResponse(success=False, message=str(e))
 
 
 @router.delete("/agent/delete/{id}", response_model=ApiResponse)
@@ -117,10 +123,13 @@ def delete_agent(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    ok = svc.delete_agent(db, id)
-    if not ok:
-        return ApiResponse(success=False, message="Not found")
-    return ApiResponse(message="Deleted")
+    try:
+        ok = svc.delete_agent(db, id)
+        if not ok:
+            return ApiResponse(success=False, message="Not found")
+        return ApiResponse(message="Deleted")
+    except ValueError as e:
+        return ApiResponse(success=False, message=str(e))
 
 
 @router.put("/agent/update-status", response_model=ApiResponse)

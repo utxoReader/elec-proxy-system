@@ -13,6 +13,7 @@ import ProfitSummary from '@/pages/profit/ProfitSummary';
 import CommissionLayout from '@/pages/commission/CommissionLayout';
 import CommissionConfig from '@/pages/commission/CommissionConfig';
 import AgentFeeList from '@/pages/commission/AgentFeeList';
+import CommissionApproval from '@/pages/commission/CommissionApproval';
 
 // Agent pages
 import AgentList from '@/pages/agent/AgentList';
@@ -126,7 +127,7 @@ function AuthGate() {
           <Route index element={<Navigate to="/commissions/config" replace />} />
           <Route path="config" element={<CommissionConfig />} />
           <Route path="fees" element={<AgentFeeList />} />
-          <Route path="approval" element={<div className="p-6"><h1 className="text-xl font-bold">审批管理</h1></div>} />
+          <Route path="approval" element={<CommissionApproval />} />
         </Route>
       </Route>
     </Routes>

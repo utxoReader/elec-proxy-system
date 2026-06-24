@@ -1205,6 +1205,11 @@ class CustomerSavingsService:
             if row.hour_index is not None and row.price is not None:
                 base_hourly[row.hour_index] = row.price
 
+        # Pre-compute flat-rate average base price (M2 fix: avoid repeated calculation)
+        flat_avg_price = Decimal("0")
+        if base_hourly:
+            flat_avg_price = sum(base_hourly.values(), Decimal("0")) / Decimal(len(base_hourly))
+
         for item in items:
             day_grid = Decimal("0")
             day_customer = Decimal("0")
@@ -1217,9 +1222,8 @@ class CustomerSavingsService:
 
                 if package_type == 1:
                     # Flat-rate
-                    normal_price = (sum(base_hourly.values(), Decimal("0")) / Decimal(len(base_hourly))) if base_hourly else Decimal("0")
                     coeff = get_price_coefficient(period)
-                    customer_price = normal_price * coeff + price_diff
+                    customer_price = flat_avg_price * coeff + price_diff
                 else:
                     # Timed
                     customer_price = base_hourly.get(h, Decimal("0")) + price_diff
@@ -1235,10 +1239,10 @@ class CustomerSavingsService:
 
             daily_details.append({
                 "date": str(item.data_date),
-                "consumption": float(day_consumption),
-                "gridFee": float(day_grid),
-                "customerFee": float(day_customer),
-                "savings": float(day_savings),
+                "consumption": day_consumption.quantize(Decimal("0.0001")),
+                "gridFee": day_grid.quantize(Decimal("0.01")),
+                "customerFee": day_customer.quantize(Decimal("0.01")),
+                "savings": day_savings.quantize(Decimal("0.01")),
             })
 
         total_savings = total_grid_fee - total_customer_fee

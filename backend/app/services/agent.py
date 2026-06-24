@@ -113,6 +113,19 @@ def get_agent(db: Session, id: int) -> Optional[dict]:
 
 
 def create_agent(db: Session, data: AgentCreate) -> dict:
+    """创建代理商，带业务校验。
+    Java 校验：大代理(type=1)不能有parent，小代理(type=2)必须有parent。
+    """
+    # 层级校验
+    if data.type == 1 and data.parent_id is not None:
+        raise ValueError("大代理不能有上级代理")
+    if data.type == 2 and data.parent_id is None:
+        raise ValueError("小代理必须有上级代理")
+    # parent 存在性校验
+    if data.parent_id is not None:
+        parent = db.query(Agent).filter(Agent.id == data.parent_id, Agent.deleted_at.is_(None)).first()
+        if not parent:
+            raise ValueError(f"上级代理ID {data.parent_id} 不存在")
     obj = Agent(**data.model_dump())
     db.add(obj)
     db.commit()
@@ -124,6 +137,17 @@ def update_agent(db: Session, data: AgentUpdate) -> Optional[dict]:
     obj = db.query(Agent).filter(Agent.id == data.id, Agent.deleted_at.is_(None)).first()
     if not obj:
         return None
+    # 层级校验（仅当 type 或 parent_id 变更时）
+    new_type = data.type if data.type is not None else obj.type
+    new_parent_id = data.parent_id if data.parent_id is not None else obj.parent_id
+    if new_type == 1 and new_parent_id is not None:
+        raise ValueError("大代理不能有上级代理")
+    if new_type == 2 and new_parent_id is None:
+        raise ValueError("小代理必须有上级代理")
+    if new_parent_id is not None:
+        parent = db.query(Agent).filter(Agent.id == new_parent_id, Agent.deleted_at.is_(None)).first()
+        if not parent:
+            raise ValueError(f"上级代理ID {new_parent_id} 不存在")
     for k, v in data.model_dump(exclude={"id"}, exclude_none=True).items():
         setattr(obj, k, v)
     db.commit()
@@ -135,7 +159,12 @@ def delete_agent(db: Session, id: int) -> bool:
     obj = get_agent_raw(db, id)
     if not obj:
         return False
-    # Java 原版不允许删除已签约的代理（status==1）, 先做基础检查
+    # Java: 不允许删除还有子代理的代理商
+    children = db.query(Agent).filter(
+        Agent.parent_id == id, Agent.deleted_at.is_(None)
+    ).count()
+    if children > 0:
+        raise ValueError(f"该代理下有 {children} 个子代理，请先删除子代理")
     obj.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return True

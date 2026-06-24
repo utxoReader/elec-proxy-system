@@ -160,7 +160,7 @@ def _load_market_allocation(db: Session, usage_month: str) -> Decimal:
         .filter(
             MarketAllocationPrice.year_month == usage_month,
             MarketAllocationPrice.deleted_at.is_(None),
-            MarketAllocationPrice.status == 1,
+            MarketAllocationPrice.status == 0,  # 0=enabled, 1=disabled
         )
         .first()
     )
