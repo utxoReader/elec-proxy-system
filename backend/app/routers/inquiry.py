@@ -38,6 +38,7 @@ def list_inquiries(
     usage_month: str = Query(None, description="YYYY-MM"),
     agent_id: int = Query(None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     result = svc.list_inquiries(db, page, page_size, inquiry_status, customer_name, usage_month, agent_id)
     return ApiResponse(data=result)
@@ -146,6 +147,7 @@ def export_inquiries(
     usage_month: str = Query(None),
     agent_id: int = Query(None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     data = svc.export_inquiries(db, inquiry_status, customer_name, usage_month, agent_id)
     return StreamingResponse(
@@ -199,6 +201,7 @@ def list_all_inquiries(
     customer_name: str = Query(None),
     agent_id: int = Query(None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     items = svc.list_all(db, inquiry_status, customer_name, agent_id)
     return ApiResponse(data=items)
@@ -238,6 +241,7 @@ def list_expired_inquiries(current_user: CurrentUser = Depends(get_current_user)
 def list_by_customer(
     customer_name: str = Query(..., description="Customer name (partial match)"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     items = svc.list_by_customer(db, customer_name)
     return ApiResponse(data=items)
@@ -247,6 +251,7 @@ def list_by_customer(
 def list_by_status(
     inquiry_status: int = Query(..., description="Status code"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     items = svc.list_by_status(db, inquiry_status)
     return ApiResponse(data=items)
@@ -263,6 +268,7 @@ def list_by_time_range(
     start_date: str = Query(..., description="ISO date string"),
     end_date: str = Query(..., description="ISO date string"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     items = svc.list_by_time_range(db, start_date, end_date)
     return ApiResponse(data=items)
@@ -272,6 +278,7 @@ def list_by_time_range(
 def list_by_month(
     usage_month: str = Query(..., description="YYYY-MM"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     items = svc.list_by_month(db, usage_month)
     return ApiResponse(data=items)
@@ -281,6 +288,7 @@ def list_by_month(
 def list_by_year(
     year: str = Query(..., description="YYYY"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     items = svc.list_by_year(db, year)
     return ApiResponse(data=items)
@@ -423,6 +431,7 @@ def calculate_dynamic_pricing(
     id: int,
     price_difference: Decimal = Query(..., description="Price difference to calculate with"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """What-if calculator with user-supplied price difference."""
     result = svc.calculate_dynamic_pricing(db, id, price_difference)

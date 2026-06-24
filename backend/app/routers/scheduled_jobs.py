@@ -80,7 +80,7 @@ def run_price_effective(
 
 @router.post("/jobs/contract-expiry/run", response_model=ApiResponse)
 def run_contract_expiry(
-    payload: ContractExpiryRunRequest, db: Session = Depends(get_db)
+    payload: ContractExpiryRunRequest, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)
 ):
     """手动触发合同到期提醒任务。"""
     result = svc.run_contract_expiry_reminder(db, payload.days_before)

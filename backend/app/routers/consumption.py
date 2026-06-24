@@ -188,7 +188,7 @@ def delete_point96(id: int, db: Session = Depends(get_db), current_user: Current
 
 
 @router.get("/point96/import-template")
-def download_point96_import_template():
+def download_point96_import_template(current_user: CurrentUser = Depends(get_current_user)):
     """Download blank 96-point data import template."""
     from app.services.excel_utils import export_to_response
 

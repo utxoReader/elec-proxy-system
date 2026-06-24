@@ -202,19 +202,20 @@ def export_customers_excel(
     customer_status: int = Query(None),
     agent_id: int = Query(None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """Export customer accounts as Excel."""
     return svc.export_customers_excel(db, customer_status, agent_id)
 
 
 @router.get("/customer-account/import-template")
-def download_customer_import_template(db: Session = Depends(get_db)):
+def download_customer_import_template(db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     """Download blank customer import template."""
     return svc.download_customer_import_template()
 
 
 @router.post("/customer-account/import", response_model=ApiResponse)
-def import_customers(file: UploadFile, db: Session = Depends(get_db)):
+def import_customers(file: UploadFile, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     """Import customer accounts from Excel."""
     result = svc.import_customers_from_excel(db, file)
     return ApiResponse(data=result)

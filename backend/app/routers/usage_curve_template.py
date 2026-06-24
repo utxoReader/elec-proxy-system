@@ -150,7 +150,7 @@ class ValidateRatiosRequest(BaseModel):
 
 
 @router.post("/validate-ratios", response_model=ApiResponse)
-def validate_ratios(payload: ValidateRatiosRequest):
+def validate_ratios(payload: ValidateRatiosRequest, current_user: CurrentUser = Depends(get_current_user)):
     """POST /validate-ratios — check whether 24 ratios sum to ~1.0."""
     result = UsageCurveTemplateService.validate_ratios(payload.ratios)
     return ApiResponse(data=result)

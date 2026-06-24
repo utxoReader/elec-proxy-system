@@ -147,6 +147,6 @@ def update_agent_status(
 
 
 @router.get("/agent/export-excel")
-def export_agents_excel(db: Session = Depends(get_db)):
+def export_agents_excel(db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     return svc.export_agents_excel(db)
 
