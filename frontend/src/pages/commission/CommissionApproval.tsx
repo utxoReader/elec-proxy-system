@@ -4,6 +4,7 @@ import type { PageResult } from '@/shared/types';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
 import { Modal } from '@/shared/ui/Modal';
+import { DatePicker } from '@/shared/ui/DatePicker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
 import { cn } from '@/shared/utils';
 import { AlertCircle, CheckCircle, XCircle, RotateCcw, Coins } from 'lucide-react';
@@ -188,20 +189,13 @@ export default function CommissionApproval() {
               placeholder="代理商名称"
               className="w-48"
             />
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">月份</label>
-              <input
-                type="month"
-                value={feeMonth}
-                onChange={(e) => setFeeMonth(e.target.value)}
-                className={cn(
-                  'flex h-10 w-40 rounded-lg border px-3 py-2 text-sm',
-                  'bg-background-tertiary text-foreground',
-                  'border-transparent placeholder:text-foreground-tertiary',
-                  'transition-all duration-200 focus:outline-none focus:border-foreground'
-                )}
-              />
-            </div>
+            <DatePicker
+              label="月份"
+              mode="month"
+              value={feeMonth}
+              onChange={(v) => setFeeMonth(v)}
+              className="w-40"
+            />
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">审批状态</label>
               <select

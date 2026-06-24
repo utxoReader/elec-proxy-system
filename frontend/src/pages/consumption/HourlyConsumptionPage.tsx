@@ -321,20 +321,11 @@ export default function HourlyConsumptionPage() {
               <label className="text-sm font-medium text-foreground">客户</label>
               <Select value={submitCustomerId} options={customerFormOptions} onChange={(v) => setSubmitCustomerId(v)} searchable />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">日期</label>
-              <input
-                type="date"
-                value={submitDate}
-                onChange={(e) => setSubmitDate(e.target.value)}
-                className={cn(
-                  'flex h-10 w-full rounded-lg border px-3 py-2 text-sm',
-                  'bg-background-tertiary text-foreground',
-                  'border-transparent placeholder:text-foreground-tertiary',
-                  'transition-all duration-200 focus:outline-none focus:border-foreground'
-                )}
-              />
-            </div>
+            <DatePicker
+              label="日期"
+              value={submitDate}
+              onChange={(v) => setSubmitDate(v)}
+            />
           </div>
           <div className="grid grid-cols-6 gap-2">
             {submitHours.map((v, i) => (
@@ -383,20 +374,11 @@ export default function HourlyConsumptionPage() {
               <label className="text-sm font-medium text-foreground">客户</label>
               <Select value={splitCustomerId} options={customerFormOptions} onChange={(v) => setSplitCustomerId(v)} searchable />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">日期</label>
-              <input
-                type="date"
-                value={splitDate}
-                onChange={(e) => setSplitDate(e.target.value)}
-                className={cn(
-                  'flex h-10 w-full rounded-lg border px-3 py-2 text-sm',
-                  'bg-background-tertiary text-foreground',
-                  'border-transparent placeholder:text-foreground-tertiary',
-                  'transition-all duration-200 focus:outline-none focus:border-foreground'
-                )}
-              />
-            </div>
+            <DatePicker
+              label="日期"
+              value={splitDate}
+              onChange={(v) => setSplitDate(v)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input

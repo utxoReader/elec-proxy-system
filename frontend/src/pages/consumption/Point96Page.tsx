@@ -3,6 +3,7 @@ import { consumptionApi, customerApi } from '@/shared/api';
 import type { PageResult } from '@/shared/types';
 import { Button } from '@/shared/ui/Button';
 import { Select } from '@/shared/ui/Select';
+import { DatePicker } from '@/shared/ui/DatePicker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
 import { cn } from '@/shared/utils';
 import { AlertCircle, RotateCcw } from 'lucide-react';
@@ -185,20 +186,12 @@ export default function Point96Page() {
                 <label className="text-sm font-medium text-foreground">客户</label>
                 <Select value={importCustomerId} options={customerFormOptions} onChange={(v) => setImportCustomerId(v)} searchable />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">日期</label>
-                <input
-                  type="date"
-                  value={importDate}
-                  onChange={(e) => setImportDate(e.target.value)}
-                  className={cn(
-                    'flex h-10 w-44 rounded-lg border px-3 py-2 text-sm',
-                    'bg-background-tertiary text-foreground',
-                    'border-transparent placeholder:text-foreground-tertiary',
-                    'transition-all duration-200 focus:outline-none focus:border-foreground'
-                  )}
-                />
-              </div>
+              <DatePicker
+                label="日期"
+                value={importDate}
+                onChange={(v) => setImportDate(v)}
+                className="w-44"
+              />
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">文件</label>
                 <input
@@ -217,34 +210,19 @@ export default function Point96Page() {
               <label className="text-sm font-medium text-foreground">客户</label>
               <Select value={customerId} options={customerOptions} onChange={(v) => { setCustomerId(v); setPage(1); }} searchable />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">月份</label>
-              <input
-                type="month"
-                value={dataMonth}
-                onChange={(e) => { setDataMonth(e.target.value); setPage(1); }}
-                className={cn(
-                  'flex h-10 w-40 rounded-lg border px-3 py-2 text-sm',
-                  'bg-background-tertiary text-foreground',
-                  'border-transparent placeholder:text-foreground-tertiary',
-                  'transition-all duration-200 focus:outline-none focus:border-foreground'
-                )}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">日期</label>
-              <input
-                type="date"
-                value={dataDate}
-                onChange={(e) => { setDataDate(e.target.value); setPage(1); }}
-                className={cn(
-                  'flex h-10 w-44 rounded-lg border px-3 py-2 text-sm',
-                  'bg-background-tertiary text-foreground',
-                  'border-transparent placeholder:text-foreground-tertiary',
-                  'transition-all duration-200 focus:outline-none focus:border-foreground'
-                )}
-              />
-            </div>
+            <DatePicker
+              label="月份"
+              mode="month"
+              value={dataMonth}
+              onChange={(v) => { setDataMonth(v); setPage(1); }}
+              className="w-40"
+            />
+            <DatePicker
+              label="日期"
+              value={dataDate}
+              onChange={(v) => { setDataDate(v); setPage(1); }}
+              className="w-44"
+            />
             <Button onClick={handleSearch}>查询</Button>
           </div>
 
