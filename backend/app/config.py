@@ -4,43 +4,33 @@ import secrets
 from typing import List
 
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from dataclasses import dataclass, field
+from typing import List
+import os
+import secrets
 
 
-class Settings(BaseSettings):
-    """Application configuration loaded from environment variables."""
+def _env(key: str, default: str) -> str:
+    return os.environ.get(key, default)
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+
+@dataclass
+class Settings:
+    """Application configuration loaded from environment variables / .env file."""
 
     APP_NAME: str = "桐叶售电代理系统"
     APP_VERSION: str = "0.1.0"
     APP_ENV: str = "development"
 
-    DATABASE_URL: str = Field(
-        default="postgresql+psycopg2://tongye:tongye@localhost:5432/tongye",
-        description="SQLAlchemy database URL (PostgreSQL via psycopg2).",
-    )
+    DATABASE_URL: str = "postgresql+pg8000://tongye:tongye@localhost:5432/tongye"
 
-    SECRET_KEY: str = Field(
-        default_factory=lambda: secrets.token_urlsafe(32),
-        description="Secret key for JWT signing. Auto-generated if not set.",
-    )
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours (was 7 days)
+    SECRET_KEY: str = field(default_factory=lambda: secrets.token_urlsafe(32))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     ALGORITHM: str = "HS256"
 
-    CORS_ORIGINS: List[str] = Field(
-        default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"],
-        description="Allowed CORS origins. In production, set to specific frontend domain.",
-    )
+    CORS_ORIGINS: List[str] = field(default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"])
 
-    SCHEDULER_ENABLED: bool = Field(
-        default=False,
-        description="Enable APScheduler background jobs. Defaults to False; set to True in development via env.",
-    )
+    SCHEDULER_ENABLED: bool = False
 
     @property
     def is_development(self) -> bool:
@@ -51,4 +41,48 @@ class Settings(BaseSettings):
         return self.APP_ENV.lower() == "production"
 
 
-settings = Settings()
+_settings_cache: Settings | None = None
+
+
+def _load_env_file() -> None:
+    """Load .env file manually without pydantic-settings."""
+    import pathlib
+    env_path = pathlib.Path(__file__).resolve().parent.parent / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key = key.strip()
+        val = val.strip().strip('"').strip("'")
+        if key not in os.environ:
+            os.environ[key] = val
+
+
+def get_settings() -> Settings:
+    global _settings_cache
+    if _settings_cache is not None:
+        return _settings_cache
+    _load_env_file()
+    s = Settings()
+    s.APP_NAME = _env("APP_NAME", s.APP_NAME)
+    s.APP_VERSION = _env("APP_VERSION", s.APP_VERSION)
+    s.APP_ENV = _env("APP_ENV", s.APP_ENV)
+    s.DATABASE_URL = _env("DATABASE_URL", s.DATABASE_URL)
+    s.SECRET_KEY = _env("SECRET_KEY", secrets.token_urlsafe(32))
+    s.ACCESS_TOKEN_EXPIRE_MINUTES = int(_env("ACCESS_TOKEN_EXPIRE_MINUTES", str(s.ACCESS_TOKEN_EXPIRE_MINUTES)))
+    s.ALGORITHM = _env("ALGORITHM", s.ALGORITHM)
+    s.SCHEDULER_ENABLED = _env("SCHEDULER_ENABLED", str(s.SCHEDULER_ENABLED)).lower() == "true"
+    import json
+    cors_raw = _env("CORS_ORIGINS", "")
+    if cors_raw:
+        s.CORS_ORIGINS = json.loads(cors_raw)
+    _settings_cache = s
+    return s
+
+
+settings = get_settings()

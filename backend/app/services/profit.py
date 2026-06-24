@@ -378,6 +378,7 @@ def _get_market_allocation_price(db: Session, profit_month: str) -> Decimal:
         .filter(
             MarketAllocationPrice.year_month == profit_month,
             MarketAllocationPrice.deleted_at.is_(None),
+            MarketAllocationPrice.status == 0,
         )
         .first()
     )
@@ -407,10 +408,10 @@ def _get_commission_config(db: Session) -> tuple:
 
 
 TIME_PERIOD_COEFFICIENTS = {
-    "peak": Decimal("1.8"),
-    "high": Decimal("1.5"),
+    "peak": Decimal("1.92"),
+    "high": Decimal("1.60"),
     "normal": Decimal("1.0"),
-    "valley": Decimal("0.5"),
+    "valley": Decimal("0.45"),
 }
 
 
