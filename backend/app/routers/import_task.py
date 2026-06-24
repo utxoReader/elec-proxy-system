@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user, CurrentUser
 from app.schemas.common import ApiResponse
 from app.services.import_task import ImportTaskService
 
@@ -17,13 +18,14 @@ def list_import_tasks(
     task_status: int = Query(None),
     original_filename: str = Query(None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     result = ImportTaskService.list_page(db, page, page_size, task_status, original_filename)
     return ApiResponse(data=result)
 
 
 @router.get("/get/{id}", response_model=ApiResponse)
-def get_import_task(id: int, db: Session = Depends(get_db)):
+def get_import_task(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = ImportTaskService.get(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")

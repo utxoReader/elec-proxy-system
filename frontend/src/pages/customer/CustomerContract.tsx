@@ -5,6 +5,7 @@ import type { PageResult } from '@/shared/types';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
 import { Modal } from '@/shared/ui/Modal';
+import { DatePicker } from '@/shared/ui/DatePicker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
 import { cn } from '@/shared/utils';
 import { AlertCircle, RotateCcw } from 'lucide-react';
@@ -295,11 +296,10 @@ export default function CustomerContract() {
         }
       >
         <div className="space-y-4">
-          <Input
+          <DatePicker
             label="终止日期"
-            type="date"
             value={terminateDate}
-            onChange={(e) => setTerminateDate(e.target.value)}
+            onChange={(v) => setTerminateDate(v)}
           />
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">终止原因</label>
@@ -340,17 +340,15 @@ export default function CustomerContract() {
         }
       >
         <div className="space-y-4">
-          <Input
+          <DatePicker
             label="新合同开始"
-            type="date"
             value={renewStart}
-            onChange={(e) => setRenewStart(e.target.value)}
+            onChange={(v) => setRenewStart(v)}
           />
-          <Input
+          <DatePicker
             label="新合同结束"
-            type="date"
             value={renewEnd}
-            onChange={(e) => setRenewEnd(e.target.value)}
+            onChange={(v) => setRenewEnd(v)}
           />
         </div>
       </Modal>

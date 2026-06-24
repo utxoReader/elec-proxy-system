@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user, CurrentUser
 from app.schemas.common import ApiResponse
 from app.schemas.usage_curve_template import (
     UsageCurveTemplateCreate,
@@ -30,14 +31,14 @@ def list_usage_curve_templates(
     template_name: str = Query(None),
     industry: str = Query(None),
     status: int = Query(None),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     result = UsageCurveTemplateService.list_page(db, page, page_size, template_name, industry, status)
     return ApiResponse(data=result)
 
 
 @router.get("/get/{id}", response_model=ApiResponse)
-def get_usage_curve_template(id: int, db: Session = Depends(get_db)):
+def get_usage_curve_template(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = UsageCurveTemplateService.get(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -45,13 +46,13 @@ def get_usage_curve_template(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/create", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
-def create_usage_curve_template(payload: UsageCurveTemplateCreate, db: Session = Depends(get_db)):
+def create_usage_curve_template(payload: UsageCurveTemplateCreate, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = UsageCurveTemplateService.create(db, payload)
     return ApiResponse(message="Created", data={"id": obj.id})
 
 
 @router.put("/update", response_model=ApiResponse)
-def update_usage_curve_template(payload: UsageCurveTemplateUpdate, db: Session = Depends(get_db)):
+def update_usage_curve_template(payload: UsageCurveTemplateUpdate, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = UsageCurveTemplateService.update(db, payload)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -59,7 +60,7 @@ def update_usage_curve_template(payload: UsageCurveTemplateUpdate, db: Session =
 
 
 @router.delete("/delete/{id}", response_model=ApiResponse)
-def delete_usage_curve_template(id: int, db: Session = Depends(get_db)):
+def delete_usage_curve_template(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     ok = UsageCurveTemplateService.delete(db, id)
     if not ok:
         return ApiResponse(success=False, message="Not found")
@@ -71,7 +72,7 @@ def delete_usage_curve_template(id: int, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 @router.get("/enabled", response_model=ApiResponse)
-def list_enabled_templates(db: Session = Depends(get_db)):
+def list_enabled_templates(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """GET /enabled — all enabled templates."""
     items = UsageCurveTemplateService.list_enabled(db)
     return ApiResponse(data=items)
@@ -80,7 +81,7 @@ def list_enabled_templates(db: Session = Depends(get_db)):
 @router.get("/by-type", response_model=ApiResponse)
 def list_by_type(
     template_type: int = Query(..., description="模板类型"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """GET /by-type — templates filtered by template_type."""
     items = UsageCurveTemplateService.get_by_type(db, template_type)
@@ -88,7 +89,7 @@ def list_by_type(
 
 
 @router.get("/default", response_model=ApiResponse)
-def get_default_template(db: Session = Depends(get_db)):
+def get_default_template(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """GET /default — the default template."""
     obj = UsageCurveTemplateService.get_default(db)
     if not obj:
@@ -99,7 +100,7 @@ def get_default_template(db: Session = Depends(get_db)):
 @router.put("/set-default", response_model=ApiResponse)
 def set_default_template(
     id: int = Query(..., description="Template ID to set as default"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """PUT /set-default — make this template the sole default."""
     ok = UsageCurveTemplateService.set_default(db, id)
@@ -112,7 +113,7 @@ def set_default_template(
 def update_template_status(
     id: int = Query(..., description="Template ID"),
     status: int = Query(..., description="New status (1=enabled, 0=disabled)"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """PUT /update-status — enable/disable a template."""
     ok = UsageCurveTemplateService.update_status(db, id, status)
@@ -124,7 +125,7 @@ def update_template_status(
 @router.get("/hourly-ratios", response_model=ApiResponse)
 def get_hourly_ratios(
     template_id: int = Query(..., description="Template ID"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """GET /hourly-ratios — 24h normal ratios as a list."""
     ratios = UsageCurveTemplateService.get_hourly_ratios(db, template_id)
@@ -136,7 +137,7 @@ def get_hourly_ratios(
 @router.get("/hourly-ratios-by-type", response_model=ApiResponse)
 def get_hourly_ratios_by_type(
     template_type: int = Query(..., description="Template type"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """GET /hourly-ratios-by-type — 24h ratios for all templates of a type."""
     items = UsageCurveTemplateService.get_hourly_ratios_by_type(db, template_type)
@@ -158,7 +159,7 @@ def validate_ratios(payload: ValidateRatiosRequest):
 @router.get("/hourly-peak-ratios", response_model=ApiResponse)
 def get_hourly_peak_ratios(
     template_id: int = Query(..., description="Template ID"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """GET /hourly-peak-ratios — 24h peak-month ratios."""
     ratios = UsageCurveTemplateService.get_hourly_peak_ratios(db, template_id)
@@ -170,7 +171,7 @@ def get_hourly_peak_ratios(
 @router.get("/hourly-peak-ratios-by-type", response_model=ApiResponse)
 def get_hourly_peak_ratios_by_type(
     template_type: int = Query(..., description="Template type"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """GET /hourly-peak-ratios-by-type — peak ratios for all templates of a type."""
     items = UsageCurveTemplateService.get_hourly_peak_ratios_by_type(db, template_type)
@@ -181,7 +182,7 @@ def get_hourly_peak_ratios_by_type(
 def get_hourly_ratios_with_peak(
     template_id: int = Query(..., description="Template ID"),
     is_peak_month: bool = Query(False, description="Whether current month is a peak month"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """GET /hourly-ratios-with-peak — ratios + per-hour isPeak flag."""
     result = UsageCurveTemplateService.get_hourly_ratios_with_peak(db, template_id, is_peak_month)
@@ -194,7 +195,7 @@ def get_hourly_ratios_with_peak(
 def get_hourly_ratios_by_type_with_peak(
     template_type: int = Query(..., description="Template type"),
     is_peak_month: bool = Query(False, description="Whether current month is a peak month"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     """GET /hourly-ratios-by-type-with-peak — ratios + peak flag for all templates of a type."""
     items = UsageCurveTemplateService.get_hourly_ratios_by_type_with_peak(db, template_type, is_peak_month)
@@ -205,7 +206,7 @@ def get_hourly_ratios_by_type_with_peak(
 def export_usage_curve_templates_excel(
     template_type: int = Query(None),
     status: int = Query(None, description="1=启用, 0=禁用"),
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     enabled = bool(status) if status is not None else None
     return UsageCurveTemplateService.export_excel(db, template_type, enabled)

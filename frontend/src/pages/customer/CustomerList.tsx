@@ -4,6 +4,7 @@ import type { PageResult } from '@/shared/types';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
 import { Select } from '@/shared/ui/Select';
+import { DatePicker } from '@/shared/ui/DatePicker';
 import { Modal } from '@/shared/ui/Modal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
 import { cn } from '@/shared/utils';
@@ -485,34 +486,16 @@ export default function CustomerList() {
             <div />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">合同开始</label>
-              <input
-                type="date"
-                value={form.contract_start_date}
-                onChange={(e) => setForm((f) => ({ ...f, contract_start_date: e.target.value }))}
-                className={cn(
-                  'flex h-10 w-full rounded-lg border px-3 py-2 text-sm',
-                  'bg-background-tertiary text-foreground',
-                  'border-transparent placeholder:text-foreground-tertiary',
-                  'transition-all duration-200 focus:outline-none focus:border-foreground'
-                )}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">合同结束</label>
-              <input
-                type="date"
-                value={form.contract_end_date}
-                onChange={(e) => setForm((f) => ({ ...f, contract_end_date: e.target.value }))}
-                className={cn(
-                  'flex h-10 w-full rounded-lg border px-3 py-2 text-sm',
-                  'bg-background-tertiary text-foreground',
-                  'border-transparent placeholder:text-foreground-tertiary',
-                  'transition-all duration-200 focus:outline-none focus:border-foreground'
-                )}
-              />
-            </div>
+            <DatePicker
+              label="合同开始"
+              value={form.contract_start_date}
+              onChange={(v) => setForm((f) => ({ ...f, contract_start_date: v }))}
+            />
+            <DatePicker
+              label="合同结束"
+              value={form.contract_end_date}
+              onChange={(v) => setForm((f) => ({ ...f, contract_end_date: v }))}
+            />
           </div>
         </div>
       </Modal>

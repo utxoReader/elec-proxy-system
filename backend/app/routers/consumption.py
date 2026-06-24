@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user, CurrentUser
 from app.schemas.common import ApiResponse
 from app.schemas.consumption import (
     CustomerDailyConsumptionCreate,
@@ -48,7 +49,7 @@ def list_daily_consumption(
     customer_account_id: int = Query(None),
     data_month: str = Query(None, description="YYYY-MM"),
     data_date: date = Query(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     result = CustomerDailyConsumptionService.list_page(
         db, page, page_size, customer_account_id, data_month, data_date
@@ -57,7 +58,7 @@ def list_daily_consumption(
 
 
 @router.get("/daily-consumption/get/{id}", response_model=ApiResponse)
-def get_daily_consumption(id: int, db: Session = Depends(get_db)):
+def get_daily_consumption(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = CustomerDailyConsumptionService.get(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -65,13 +66,13 @@ def get_daily_consumption(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/daily-consumption/create", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
-def create_daily_consumption(payload: CustomerDailyConsumptionCreate, db: Session = Depends(get_db)):
+def create_daily_consumption(payload: CustomerDailyConsumptionCreate, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = CustomerDailyConsumptionService.create(db, payload)
     return ApiResponse(message="Created", data={"id": obj.id})
 
 
 @router.put("/daily-consumption/update", response_model=ApiResponse)
-def update_daily_consumption(payload: CustomerDailyConsumptionUpdate, db: Session = Depends(get_db)):
+def update_daily_consumption(payload: CustomerDailyConsumptionUpdate, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = CustomerDailyConsumptionService.update(db, payload)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -79,7 +80,7 @@ def update_daily_consumption(payload: CustomerDailyConsumptionUpdate, db: Sessio
 
 
 @router.delete("/daily-consumption/delete/{id}", response_model=ApiResponse)
-def delete_daily_consumption(id: int, db: Session = Depends(get_db)):
+def delete_daily_consumption(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     ok = CustomerDailyConsumptionService.delete(db, id)
     if not ok:
         return ApiResponse(success=False, message="Not found")
@@ -87,7 +88,7 @@ def delete_daily_consumption(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/daily-consumption/batch-create", response_model=ApiResponse)
-def batch_create_daily_consumption(payload: list[CustomerDailyConsumptionCreate], db: Session = Depends(get_db)):
+def batch_create_daily_consumption(payload: list[CustomerDailyConsumptionCreate], db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     count = CustomerDailyConsumptionService.batch_create(db, payload)
     return ApiResponse(message=f"Created {count} records", data={"count": count})
 
@@ -96,7 +97,7 @@ def batch_create_daily_consumption(payload: list[CustomerDailyConsumptionCreate]
 def daily_consumption_statistics(
     customer_account_id: int = Query(None),
     data_month: str = Query(None, description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     result = CustomerDailyConsumptionService.statistics(db, customer_account_id, data_month)
     return ApiResponse(data=result)
@@ -111,7 +112,7 @@ def list_hourly_consumption(
     customer_account_id: int = Query(None),
     data_month: str = Query(None, description="YYYY-MM"),
     data_date: date = Query(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     result = CustomerHourlyConsumptionService.list_page(
         db, page, page_size, customer_account_id, data_month, data_date
@@ -120,7 +121,7 @@ def list_hourly_consumption(
 
 
 @router.get("/hourly-consumption/get/{id}", response_model=ApiResponse)
-def get_hourly_consumption(id: int, db: Session = Depends(get_db)):
+def get_hourly_consumption(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = CustomerHourlyConsumptionService.get(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -128,13 +129,13 @@ def get_hourly_consumption(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/hourly-consumption/create", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
-def create_hourly_consumption(payload: CustomerHourlyConsumptionCreate, db: Session = Depends(get_db)):
+def create_hourly_consumption(payload: CustomerHourlyConsumptionCreate, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = CustomerHourlyConsumptionService.create(db, payload)
     return ApiResponse(message="Created", data={"id": obj.id})
 
 
 @router.put("/hourly-consumption/update", response_model=ApiResponse)
-def update_hourly_consumption(payload: CustomerHourlyConsumptionUpdate, db: Session = Depends(get_db)):
+def update_hourly_consumption(payload: CustomerHourlyConsumptionUpdate, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = CustomerHourlyConsumptionService.update(db, payload)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -142,7 +143,7 @@ def update_hourly_consumption(payload: CustomerHourlyConsumptionUpdate, db: Sess
 
 
 @router.delete("/hourly-consumption/delete/{id}", response_model=ApiResponse)
-def delete_hourly_consumption(id: int, db: Session = Depends(get_db)):
+def delete_hourly_consumption(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     ok = CustomerHourlyConsumptionService.delete(db, id)
     if not ok:
         return ApiResponse(success=False, message="Not found")
@@ -158,14 +159,14 @@ def list_point96(
     customer_account_id: int = Query(None),
     data_month: str = Query(None, description="YYYY-MM"),
     data_date: date = Query(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     result = Point96DataService.list_page(db, page, page_size, customer_account_id, data_month, data_date)
     return ApiResponse(data=result)
 
 
 @router.get("/point96/get/{id}", response_model=ApiResponse)
-def get_point96(id: int, db: Session = Depends(get_db)):
+def get_point96(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = Point96DataService.get(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -173,13 +174,13 @@ def get_point96(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/point96/create", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
-def create_point96(payload: Point96DataCreate, db: Session = Depends(get_db)):
+def create_point96(payload: Point96DataCreate, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = Point96DataService.create(db, payload)
     return ApiResponse(message="Created", data={"id": obj.id})
 
 
 @router.delete("/point96/delete/{id}", response_model=ApiResponse)
-def delete_point96(id: int, db: Session = Depends(get_db)):
+def delete_point96(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     ok = Point96DataService.delete(db, id)
     if not ok:
         return ApiResponse(success=False, message="Not found")
@@ -197,13 +198,13 @@ def download_point96_import_template():
 
 
 @router.post("/point96/import", response_model=ApiResponse)
-def import_point96(file: UploadFile, db: Session = Depends(get_db)):
+def import_point96(file: UploadFile, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     result = Point96DataService.import_from_file(db, file)
     return ApiResponse(message="Imported", data=result)
 
 
 @router.post("/point96/convert-to-daily/{id}", response_model=ApiResponse)
-def convert_point96_to_daily(id: int, db: Session = Depends(get_db)):
+def convert_point96_to_daily(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     result = Point96DataService.convert_to_daily(db, id)
     return ApiResponse(message="Converted", data=result)
 
@@ -243,7 +244,7 @@ class CopyDataPayload(BaseModel):
 
 
 @router.post("/conversion/point96-to-24h", response_model=ApiResponse)
-def convert_point96_to_24h(payload: Point96To24hPayload, db: Session = Depends(get_db)):
+def convert_point96_to_24h(payload: Point96To24hPayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = Point96DataService.get(db, payload.point96_id)
     if not obj:
         return ApiResponse(success=False, message="Point96 record not found")
@@ -252,7 +253,7 @@ def convert_point96_to_24h(payload: Point96To24hPayload, db: Session = Depends(g
 
 
 @router.post("/conversion/peak-valley-to-24h", response_model=ApiResponse)
-def convert_peak_valley_to_24h(payload: PeakValleyTo24hPayload, db: Session = Depends(get_db)):
+def convert_peak_valley_to_24h(payload: PeakValleyTo24hPayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     template = UsageCurveTemplateService.get(db, payload.template_id)
     if not template:
         return ApiResponse(success=False, message="Template not found")
@@ -268,13 +269,13 @@ def convert_peak_valley_to_24h(payload: PeakValleyTo24hPayload, db: Session = De
 
 
 @router.post("/conversion/fill-missing", response_model=ApiResponse)
-def fill_missing_daily(payload: FillMissingPayload, db: Session = Depends(get_db)):
+def fill_missing_daily(payload: FillMissingPayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     result = conversion_svc.fill_missing_daily_data(db, payload.customer_account_id, payload.month)
     return ApiResponse(data=result)
 
 
 @router.post("/conversion/copy-data", response_model=ApiResponse)
-def copy_daily_data(payload: CopyDataPayload, db: Session = Depends(get_db)):
+def copy_daily_data(payload: CopyDataPayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     result = conversion_svc.copy_daily_data(
         db, payload.source_customer_id, payload.target_customer_id, payload.month
     )
@@ -286,7 +287,7 @@ def export_daily_consumption_excel(
     customer_account_id: int = Query(None),
     start_date: str = Query(None),
     end_date: str = Query(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Export daily consumption as Excel."""
     return CustomerDailyConsumptionService.export_excel(
@@ -298,7 +299,7 @@ def export_daily_consumption_excel(
 def export_hourly_consumption_excel(
     customer_account_id: int = Query(None),
     data_date: str = Query(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Export hourly consumption as Excel."""
     return CustomerHourlyConsumptionService.export_excel(
@@ -314,7 +315,7 @@ def export_hourly_consumption_excel(
 def list_hourly_all(
     customer_account_id: int = Query(None),
     data_month: str = Query(None, description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """List all hourly records without pagination."""
     result = HourlyConsumptionExtendedService.list_all(db, customer_account_id, data_month)
@@ -325,7 +326,7 @@ def list_hourly_all(
 def hourly_customer_month_data(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Get all hourly data for a customer in a specific month."""
     result = HourlyConsumptionExtendedService.get_month_data(db, customer_account_id, data_month)
@@ -336,7 +337,7 @@ def hourly_customer_month_data(
 def hourly_customer_daily(
     customer_account_id: int = Query(...),
     data_date: date = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Get hourly data for a customer on a specific date."""
     result = HourlyConsumptionExtendedService.get_daily_data(db, customer_account_id, data_date)
@@ -349,7 +350,7 @@ def hourly_customer_daily(
 def hourly_statistics(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Monthly aggregated statistics for hourly consumption."""
     result = HourlyConsumptionExtendedService.get_statistics(db, customer_account_id, data_month)
@@ -360,7 +361,7 @@ def hourly_statistics(
 def hourly_time_period_statistics(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Peak/high/normal/valley breakdown statistics."""
     result = HourlyConsumptionExtendedService.get_time_period_statistics(db, customer_account_id, data_month)
@@ -372,7 +373,7 @@ def hourly_trend(
     customer_account_id: int = Query(...),
     start_date: str = Query(...),
     end_date: str = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Daily consumption trend between two dates."""
     result = HourlyConsumptionExtendedService.get_trend(db, customer_account_id, start_date, end_date)
@@ -383,7 +384,7 @@ def hourly_trend(
 def hourly_check_completeness(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Check whether data exists for every day in the month."""
     result = HourlyConsumptionExtendedService.check_completeness(db, customer_account_id, data_month)
@@ -394,7 +395,7 @@ def hourly_check_completeness(
 def hourly_count_records(
     customer_account_id: int = Query(None),
     data_month: str = Query(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Count total hourly records matching filters."""
     count = HourlyConsumptionExtendedService.count_records(db, customer_account_id, data_month)
@@ -405,7 +406,7 @@ def hourly_count_records(
 def hourly_daily_summary(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Per-day summary for a customer in a month."""
     result = HourlyConsumptionExtendedService.get_daily_summary(db, customer_account_id, data_month)
@@ -422,7 +423,7 @@ class Submit24HourPayload(BaseModel):
 
 
 @router.post("/hourly-consumption/submit-24hour-data", response_model=ApiResponse)
-def hourly_submit_24hour(payload: Submit24HourPayload, db: Session = Depends(get_db)):
+def hourly_submit_24hour(payload: Submit24HourPayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     """Submit or update 24-hour consumption data for a specific date."""
     result = HourlyConsumptionExtendedService.submit_24hour_data(
         db, payload.customer_account_id, payload.data_date, payload.hours, payload.customer_name
@@ -442,7 +443,7 @@ class SplitTimeOfUsePayload(BaseModel):
 
 
 @router.post("/hourly-consumption/split-from-time-of-use", response_model=ApiResponse)
-def hourly_split_from_tou(payload: SplitTimeOfUsePayload, db: Session = Depends(get_db)):
+def hourly_split_from_tou(payload: SplitTimeOfUsePayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     """Distribute peak/high/normal/valley totals across 24 hours."""
     result = HourlyConsumptionExtendedService.split_from_time_of_use(
         db, payload.customer_account_id, payload.data_date,
@@ -455,7 +456,7 @@ def hourly_split_from_tou(payload: SplitTimeOfUsePayload, db: Session = Depends(
 def hourly_delete_monthly(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Soft-delete all hourly records for a customer in a month."""
     count = HourlyConsumptionExtendedService.delete_monthly_data(db, customer_account_id, data_month)
@@ -466,7 +467,7 @@ def hourly_delete_monthly(
 def hourly_delete_daily(
     customer_account_id: int = Query(...),
     data_date: date = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Soft-delete hourly records for a customer on a specific date."""
     count = HourlyConsumptionExtendedService.delete_daily_data(db, customer_account_id, data_date)
@@ -480,7 +481,7 @@ class BatchImportHourlyPayload(BaseModel):
 
 
 @router.post("/hourly-consumption/batch-import", response_model=ApiResponse)
-def hourly_batch_import(payload: BatchImportHourlyPayload, db: Session = Depends(get_db)):
+def hourly_batch_import(payload: BatchImportHourlyPayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     """Batch import 24h consumption records."""
     count = HourlyConsumptionExtendedService.batch_import(db, payload.records)
     return ApiResponse(message=f"Imported {count} records", data={"count": count})
@@ -494,7 +495,7 @@ class ConvertInquiryPayload(BaseModel):
 
 
 @router.post("/hourly-consumption/convert-inquiry-to-customer", response_model=ApiResponse)
-def hourly_convert_inquiry(payload: ConvertInquiryPayload, db: Session = Depends(get_db)):
+def hourly_convert_inquiry(payload: ConvertInquiryPayload, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     """Copy consumption data from an inquiry to a customer account."""
     result = HourlyConsumptionExtendedService.convert_inquiry_to_customer(
         db, payload.inquiry_id, payload.customer_account_id
@@ -508,7 +509,7 @@ def hourly_convert_inquiry(payload: ConvertInquiryPayload, db: Session = Depends
 def point96_by_customer_date(
     customer_account_id: int = Query(...),
     data_date: date = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Get 96-point data for a customer on a specific date."""
     result = Point96ExtendedService.get_by_customer_date(db, customer_account_id, data_date)
@@ -520,7 +521,7 @@ def point96_by_customer_date(
 @router.get("/point96/list-by-customer", response_model=ApiResponse)
 def point96_list_by_customer(
     customer_account_id: int = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """List all 96-point records for a customer."""
     result = Point96ExtendedService.list_by_customer(db, customer_account_id)
@@ -531,7 +532,7 @@ def point96_list_by_customer(
 def point96_delete_by_customer_date(
     customer_account_id: int = Query(...),
     data_date: date = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Soft-delete 96-point records for a customer on a specific date."""
     count = Point96ExtendedService.delete_by_customer_date(db, customer_account_id, data_date)
@@ -546,7 +547,7 @@ def point96_delete_by_customer_date(
 def customer_savings_preview(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Preview customer savings vs grid fee for a month."""
     result = CustomerSavingsService.preview_savings(db, customer_account_id, data_month)
@@ -557,7 +558,7 @@ def customer_savings_preview(
 def customer_savings_export_excel(
     customer_account_id: int = Query(...),
     data_month: str = Query(..., description="YYYY-MM"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user),
 ):
     """Export customer savings detail as Excel."""
     from fastapi.responses import StreamingResponse

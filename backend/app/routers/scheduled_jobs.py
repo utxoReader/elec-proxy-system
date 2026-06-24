@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user, CurrentUser
 from app.schemas.common import ApiResponse
 from app.services import scheduled_jobs as svc
 
@@ -44,7 +45,7 @@ class ContractExpiryRunRequest(BaseModel):
 
 
 @router.post("/jobs/daily-profit/run", response_model=ApiResponse)
-def run_daily_profit(payload: DailyProfitRunRequest, db: Session = Depends(get_db)):
+def run_daily_profit(payload: DailyProfitRunRequest, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     """手动触发日利润计算任务。"""
     result = svc.run_daily_profit_calculation(db, payload.target_date)
     return ApiResponse(data=result)
@@ -52,7 +53,7 @@ def run_daily_profit(payload: DailyProfitRunRequest, db: Session = Depends(get_d
 
 @router.post("/jobs/monthly-profit/run", response_model=ApiResponse)
 def run_monthly_profit(
-    payload: MonthlyProfitRunRequest, db: Session = Depends(get_db)
+    payload: MonthlyProfitRunRequest, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)
 ):
     """手动触发月度利润聚合任务。"""
     result = svc.run_monthly_profit_aggregation(db, payload.target_month)
@@ -61,7 +62,7 @@ def run_monthly_profit(
 
 @router.post("/jobs/monthly-commission/run", response_model=ApiResponse)
 def run_monthly_commission(
-    payload: MonthlyCommissionRunRequest, db: Session = Depends(get_db)
+    payload: MonthlyCommissionRunRequest, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)
 ):
     """手动触发月度佣金结算任务。"""
     result = svc.run_monthly_commission_settlement(db, payload.target_month)
@@ -70,7 +71,7 @@ def run_monthly_commission(
 
 @router.post("/jobs/price-effective/run", response_model=ApiResponse)
 def run_price_effective(
-    payload: PriceEffectiveRunRequest, db: Session = Depends(get_db)
+    payload: PriceEffectiveRunRequest, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)
 ):
     """手动触发价差生效任务。"""
     result = svc.run_price_effective_job(db, payload.target_date)

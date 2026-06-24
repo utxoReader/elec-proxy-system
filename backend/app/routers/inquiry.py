@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user, CurrentUser
 from app.schemas.common import ApiResponse
 from app.schemas.inquiry import (
     CalculatePricePayload,
@@ -43,7 +44,7 @@ def list_inquiries(
 
 
 @router.get("/inquiry/get/{id}", response_model=ApiResponse)
-def get_inquiry(id: int, db: Session = Depends(get_db)):
+def get_inquiry(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.get_inquiry(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -51,13 +52,13 @@ def get_inquiry(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/inquiry/create", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
-def create_inquiry(payload: InquiryCreate, db: Session = Depends(get_db)):
+def create_inquiry(payload: InquiryCreate, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.create_inquiry(db, payload)
     return ApiResponse(message="Created", data={"id": obj.id, "inquiry_no": obj.inquiry_no})
 
 
 @router.put("/inquiry/update", response_model=ApiResponse)
-def update_inquiry(payload: InquiryUpdate, db: Session = Depends(get_db)):
+def update_inquiry(payload: InquiryUpdate, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.update_inquiry(db, payload)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -65,7 +66,7 @@ def update_inquiry(payload: InquiryUpdate, db: Session = Depends(get_db)):
 
 
 @router.delete("/inquiry/delete/{id}", response_model=ApiResponse)
-def delete_inquiry(id: int, db: Session = Depends(get_db)):
+def delete_inquiry(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     ok = svc.delete_inquiry(db, id)
     if not ok:
         return ApiResponse(success=False, message="Not found")
@@ -73,7 +74,7 @@ def delete_inquiry(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/inquiry/{id}/quote", response_model=ApiResponse)
-def quote_inquiry(id: int, payload: QuotePayload, db: Session = Depends(get_db)):
+def quote_inquiry(id: int, payload: QuotePayload, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.quote_inquiry(db, id, payload)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -81,7 +82,7 @@ def quote_inquiry(id: int, payload: QuotePayload, db: Session = Depends(get_db))
 
 
 @router.post("/inquiry/{id}/accept", response_model=ApiResponse)
-def accept_inquiry(id: int, db: Session = Depends(get_db)):
+def accept_inquiry(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.accept_inquiry(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -92,7 +93,7 @@ def accept_inquiry(id: int, db: Session = Depends(get_db)):
 def reject_inquiry(
     id: int,
     payload: Optional[RejectPayload] = None,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     reason = payload.reject_reason if payload else None
     obj = svc.reject_inquiry(db, id, reason)
@@ -105,7 +106,7 @@ def reject_inquiry(
 def cooperate_inquiry(
     id: int,
     payload: Optional[StatusActionPayload] = None,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     payload = payload or StatusActionPayload()
     obj = svc.cooperate_inquiry(
@@ -123,7 +124,7 @@ def cooperate_inquiry(
 def terminate_inquiry(
     id: int,
     payload: Optional[StatusActionPayload] = None,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     payload = payload or StatusActionPayload()
     obj = svc.terminate_inquiry(db, id, terminate_date=payload.terminate_date)
@@ -133,7 +134,7 @@ def terminate_inquiry(
 
 
 @router.get("/inquiry/statistics", response_model=ApiResponse)
-def inquiry_statistics(db: Session = Depends(get_db)):
+def inquiry_statistics(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     result = svc.get_statistics(db)
     return ApiResponse(data=result)
 
@@ -155,7 +156,7 @@ def export_inquiries(
 
 
 @router.post("/inquiry/calculate-price", response_model=ApiResponse)
-def calculate_price(payload: CalculatePricePayload, db: Session = Depends(get_db)):
+def calculate_price(payload: CalculatePricePayload, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     result = svc.calculate_price(db, payload)
     return ApiResponse(data=result)
 
@@ -164,7 +165,7 @@ def calculate_price(payload: CalculatePricePayload, db: Session = Depends(get_db
 def upload_consumption_data(
     id: int,
     file: UploadFile,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     result = svc.upload_consumption_data(db, id, file)
     if not result:
@@ -173,7 +174,7 @@ def upload_consumption_data(
 
 
 @router.get("/inquiry/{id}/consumption-data", response_model=ApiResponse)
-def get_consumption_data(id: int, db: Session = Depends(get_db)):
+def get_consumption_data(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     data = svc.get_consumption_data(db, id)
     if data is None:
         return ApiResponse(success=False, message="Not found")
@@ -187,7 +188,7 @@ def get_consumption_data(id: int, db: Session = Depends(get_db)):
 # ── Query / filter endpoints ──────────────────────────────────────────────
 
 @router.get("/inquiry/generate-no", response_model=ApiResponse)
-def generate_no(db: Session = Depends(get_db)):
+def generate_no(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """Generate a new inquiry number without creating a record."""
     return ApiResponse(data={"inquiry_no": svc.generate_inquiry_no(db)})
 
@@ -204,31 +205,31 @@ def list_all_inquiries(
 
 
 @router.get("/inquiry/simple-list", response_model=ApiResponse)
-def simple_list(db: Session = Depends(get_db)):
+def simple_list(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     items = svc.simple_list(db)
     return ApiResponse(data=items)
 
 
 @router.get("/inquiry/by-agent/{agent_id}", response_model=ApiResponse)
-def list_by_agent(agent_id: int, db: Session = Depends(get_db)):
+def list_by_agent(agent_id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     items = svc.list_by_agent(db, agent_id)
     return ApiResponse(data=items)
 
 
 @router.get("/inquiry/pending", response_model=ApiResponse)
-def list_pending_inquiries(db: Session = Depends(get_db)):
+def list_pending_inquiries(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     items = svc.list_pending(db)
     return ApiResponse(data=items)
 
 
 @router.get("/inquiry/pending-quote-list", response_model=ApiResponse)
-def list_pending_quotes(db: Session = Depends(get_db)):
+def list_pending_quotes(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     items = svc.list_pending_quotes(db)
     return ApiResponse(data=items)
 
 
 @router.get("/inquiry/expired", response_model=ApiResponse)
-def list_expired_inquiries(db: Session = Depends(get_db)):
+def list_expired_inquiries(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     items = svc.list_expired(db)
     return ApiResponse(data=items)
 
@@ -252,7 +253,7 @@ def list_by_status(
 
 
 @router.get("/inquiry/count-by-status", response_model=ApiResponse)
-def count_by_status(db: Session = Depends(get_db)):
+def count_by_status(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     result = svc.count_by_status(db)
     return ApiResponse(data=result)
 
@@ -291,7 +292,7 @@ class BatchUpdateStatusPayload(BaseModel):
 
 
 @router.put("/inquiry/batch-update-status", response_model=ApiResponse)
-def batch_update_status(payload: BatchUpdateStatusPayload, db: Session = Depends(get_db)):
+def batch_update_status(payload: BatchUpdateStatusPayload, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     count = svc.batch_update_status(db, payload.ids, payload.inquiry_status)
     return ApiResponse(message=f"Updated {count} inquiries", data={"count": count})
 
@@ -299,7 +300,7 @@ def batch_update_status(payload: BatchUpdateStatusPayload, db: Session = Depends
 # ── Lifecycle endpoints ───────────────────────────────────────────────────
 
 @router.post("/inquiry/{id}/submit", response_model=ApiResponse)
-def submit_inquiry(id: int, db: Session = Depends(get_db)):
+def submit_inquiry(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.submit_inquiry(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -310,7 +311,7 @@ def submit_inquiry(id: int, db: Session = Depends(get_db)):
 def reject_inquiry_cooperation(
     id: int,
     payload: Optional[RejectPayload] = None,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     reason = payload.reject_reason if payload else None
     obj = svc.reject_inquiry_cooperation(db, id, reason)
@@ -320,7 +321,7 @@ def reject_inquiry_cooperation(
 
 
 @router.post("/inquiry/{id}/accept-quote-by-customer", response_model=ApiResponse)
-def accept_quote_by_customer(id: int, db: Session = Depends(get_db)):
+def accept_quote_by_customer(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.accept_quote_by_customer(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -328,7 +329,7 @@ def accept_quote_by_customer(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/inquiry/{id}/approve-quote", response_model=ApiResponse)
-def approve_quote(id: int, db: Session = Depends(get_db)):
+def approve_quote(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.approve_quote(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -339,7 +340,7 @@ def approve_quote(id: int, db: Session = Depends(get_db)):
 def reject_quote_admin(
     id: int,
     payload: Optional[RejectPayload] = None,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     reason = payload.reject_reason if payload else None
     obj = svc.reject_quote_admin(db, id, reason)
@@ -357,7 +358,7 @@ class CooperationConfirmPayload(BaseModel):
 def confirm_cooperation(
     id: int,
     payload: Optional[CooperationConfirmPayload] = None,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     payload = payload or CooperationConfirmPayload()
     obj = svc.confirm_cooperation(
@@ -378,7 +379,7 @@ class TerminateCooperationPayload(BaseModel):
 def terminate_cooperation(
     id: int,
     payload: Optional[TerminateCooperationPayload] = None,
-    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db),
 ):
     payload = payload or TerminateCooperationPayload()
     obj = svc.terminate_cooperation(db, id, payload.terminate_date)
@@ -388,7 +389,7 @@ def terminate_cooperation(
 
 
 @router.post("/inquiry/{id}/mark-expired", response_model=ApiResponse)
-def mark_expired(id: int, db: Session = Depends(get_db)):
+def mark_expired(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     obj = svc.mark_expired(db, id)
     if not obj:
         return ApiResponse(success=False, message="Not found")
@@ -396,7 +397,7 @@ def mark_expired(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/inquiry/batch-process-expired", response_model=ApiResponse)
-def batch_process_expired(db: Session = Depends(get_db)):
+def batch_process_expired(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     count = svc.batch_process_expired(db)
     return ApiResponse(message=f"Processed {count} expired inquiries", data={"count": count})
 
@@ -404,14 +405,14 @@ def batch_process_expired(db: Session = Depends(get_db)):
 # ── Pricing engine endpoints ──────────────────────────────────────────────
 
 @router.get("/inquiry/{id}/calculate-quote", response_model=ApiResponse)
-def calculate_quote_auto(id: int, db: Session = Depends(get_db)):
+def calculate_quote_auto(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """Basic auto-quote using the full pricing engine."""
     result = svc.calculate_quote_auto(db, id)
     return ApiResponse(data=result)
 
 
 @router.get("/inquiry/{id}/calculate-advanced-quote", response_model=ApiResponse)
-def calculate_advanced_quote(id: int, db: Session = Depends(get_db)):
+def calculate_advanced_quote(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """Advanced quote with full detail (both packages)."""
     result = svc.calculate_advanced_quote(db, id)
     return ApiResponse(data=result)
@@ -431,7 +432,7 @@ def calculate_dynamic_pricing(
 # ── Consumption summary / quote export ────────────────────────────────────
 
 @router.get("/inquiry/{id}/consumption-summary", response_model=ApiResponse)
-def get_consumption_summary(id: int, db: Session = Depends(get_db)):
+def get_consumption_summary(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     data = svc.get_consumption_summary(db, id)
     if data is None:
         return ApiResponse(success=False, message="Not found")
@@ -439,7 +440,7 @@ def get_consumption_summary(id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/inquiry/{id}/export-quote-result", response_class=StreamingResponse)
-def export_quote_result(id: int, db: Session = Depends(get_db)):
+def export_quote_result(id: int, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     data = svc.export_quote_result(db, id)
     return StreamingResponse(
         iter([data]),

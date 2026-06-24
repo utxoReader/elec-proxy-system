@@ -4,6 +4,7 @@ import type { PageResult } from '@/shared/types';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
 import { Select } from '@/shared/ui/Select';
+import { DatePicker } from '@/shared/ui/DatePicker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
 import { cn } from '@/shared/utils';
 import { AlertCircle, RotateCcw } from 'lucide-react';
@@ -174,24 +175,20 @@ export default function CustomerPriceChange() {
                 onChange={(e) => setNewPriceDifference(e.target.value)}
                 placeholder="元/度"
               />
-              <Input
+              <DatePicker
                 label="生效日期"
-                type="date"
-                required
                 value={effectiveDate}
-                onChange={(e) => setEffectiveDate(e.target.value)}
+                onChange={(v) => setEffectiveDate(v)}
               />
-              <Input
+              <DatePicker
                 label="新合同开始"
-                type="date"
                 value={newContractStartDate}
-                onChange={(e) => setNewContractStartDate(e.target.value)}
+                onChange={(v) => setNewContractStartDate(v)}
               />
-              <Input
+              <DatePicker
                 label="新合同结束"
-                type="date"
                 value={newContractEndDate}
-                onChange={(e) => setNewContractEndDate(e.target.value)}
+                onChange={(v) => setNewContractEndDate(v)}
               />
               <Input
                 label="变更原因"
