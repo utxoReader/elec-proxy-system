@@ -23,6 +23,7 @@ def list_customers(
     customer_status: int = Query(None),
     agent_id: int = Query(None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     return ApiResponse(data=svc.list_customers(db, page, page_size, customer_name, customer_status, agent_id))
 
@@ -90,10 +91,13 @@ def update_customer(payload: CustomerAccountUpdate, db: Session = Depends(get_db
 
 @router.delete("/customer-account/delete/{id}", response_model=ApiResponse)
 def delete_customer(id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
-    ok = svc.delete_customer(db, id)
-    if not ok:
-        return ApiResponse(success=False, message="Not found")
-    return ApiResponse(message="Deleted")
+    try:
+        ok = svc.delete_customer(db, id)
+        if not ok:
+            return ApiResponse(success=False, message="Not found")
+        return ApiResponse(message="Deleted")
+    except ValueError as e:
+        return ApiResponse(success=False, message=str(e))
 
 
 @router.put("/customer-account/update-status", response_model=ApiResponse)
@@ -188,6 +192,7 @@ def list_price_history(
     page_size: int = Query(20, ge=1, le=100),
     customer_account_id: int = Query(None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     return ApiResponse(data=svc.list_price_history(db, page, page_size, customer_account_id))
 

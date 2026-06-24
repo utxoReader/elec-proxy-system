@@ -83,10 +83,14 @@ def get_customer_options(db: Session) -> list:
 
 
 def sign_contract(db: Session, id: int, data: CustomerAccountUpdate) -> Optional[dict]:
-    """签约客户（将状态改为已签约3）"""
+    """签约客户（需前置状态为待签约2，改为已签约3）
+    匹配 Java 原版：要求 customer_status == 2（待签约）
+    """
     obj = get_customer_raw(db, id)
     if not obj:
         return None
+    if obj.customer_status != 2:
+        return {"id": id, "error": "客户状态不是待签约，无法签约"}
     obj.customer_status = 3  # contracted
     for k, v in data.model_dump(exclude={"id", "customer_status"}, exclude_none=True).items():
         setattr(obj, k, v)
@@ -96,15 +100,33 @@ def sign_contract(db: Session, id: int, data: CustomerAccountUpdate) -> Optional
 
 
 def terminate_contract(db: Session, id: int, reason: str, terminate_date: str) -> Optional[dict]:
-    """终止客户合同"""
+    """终止客户合同
+    匹配 Java 原版：保留 status=3，设置 contract_end_date 为终止日期，添加备注
+    """
     obj = get_customer_raw(db, id)
     if not obj:
         return None
-    obj.customer_status = 5  # terminated
-    obj.remark = (obj.remark or "") + f" [终止: {reason} 于 {terminate_date}]"
+    if obj.customer_status != 3:
+        return {"id": id, "error": "客户不是已签约状态，无法终止合同"}
+    # Java 原版：保留 status=3，改 end_date，加备注
+    from datetime import date as d
+    obj.contract_end_date = d.fromisoformat(terminate_date)
+    obj.remark = (obj.remark or "") + f" [合同终止: {reason} 于 {terminate_date}]"
     db.commit()
     db.refresh(obj)
     return _model_to_dict(obj)
+
+
+def delete_customer(db: Session, id: int) -> bool:
+    """删除客户（Java 原版禁止删除已签约客户 status==3）"""
+    obj = get_customer_raw(db, id)
+    if not obj:
+        return False
+    if obj.customer_status == 3:
+        raise ValueError("不能删除已签约客户，请先终止合同")
+    obj.deleted_at = datetime.now(timezone.utc)
+    db.commit()
+    return True
 
 
 def batch_update_customer_status(db: Session, ids: list[int], customer_status: int) -> int:
@@ -192,15 +214,6 @@ def get_customer_raw(db: Session, id: int) -> Optional[CustomerAccount]:
     ).first()
 
 
-def delete_customer(db: Session, id: int) -> bool:
-    obj = get_customer_raw(db, id)
-    if not obj:
-        return False
-    obj.deleted_at = datetime.now(timezone.utc)
-    db.commit()
-    return True
-
-
 def update_customer_status(db: Session, data: CustomerStatusChange) -> Optional[dict]:
     obj = get_customer_raw(db, data.id)
     if not obj:
@@ -214,14 +227,27 @@ def update_customer_status(db: Session, data: CustomerStatusChange) -> Optional[
 def change_customer_price(db: Session, data: CustomerPriceChange) -> Optional[dict]:
     """Change customer's price difference with history tracking.
 
-    Creates a price history record and updates the customer account.
-    The change takes effect on the effective_date (typically next month 1st).
+    Matches Java original: creates a price history record with status=1 (待生效).
+    Does NOT immediately update price_difference on the customer account.
+    Requires customer status == 3 (已签约).
+    A scheduled job reads pending records and applies them when effective_date arrives.
     """
     customer = get_customer_raw(db, data.customer_account_id)
     if not customer:
         return None
 
-    # Create price history record
+    # Java: only contracted customers can change price
+    if customer.customer_status != 3:
+        return {"id": customer.id, "error": "客户不是已签约状态，无法修改价差"}
+
+    # Check for no-change request
+    if (customer.price_difference == data.new_price_difference and
+        str(customer.contract_start_date or "") == str(data.new_contract_start_date or "") and
+        str(customer.contract_end_date or "") == str(data.new_contract_end_date or "")):
+        return {"id": customer.id, "message": "No changes detected"}
+
+    # Java original: only create a status=1 (pending) history record
+    # Customer price_difference stays unchanged until scheduled job applies it
     history = CustomerAccountPriceHistory(
         customer_account_id=data.customer_account_id,
         customer_name=customer.customer_name,
@@ -234,19 +260,12 @@ def change_customer_price(db: Session, data: CustomerPriceChange) -> Optional[di
         effective_date=data.effective_date,
         change_reason=data.change_reason,
         change_type=1 if not (data.new_contract_start_date or data.new_contract_end_date) else 3,
-        status=1,  # pending
+        status=1,  # pending — not yet applied
     )
     db.add(history)
 
-    # Update customer
-    customer.price_difference = data.new_price_difference
-    if data.new_contract_start_date:
-        customer.contract_start_date = data.new_contract_start_date
-    if data.new_contract_end_date:
-        customer.contract_end_date = data.new_contract_end_date
-
     db.commit()
-    db.refresh(customer)
+    db.refresh(history)
     return _model_to_dict(customer)
 
 

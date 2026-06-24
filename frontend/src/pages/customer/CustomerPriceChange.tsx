@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react';
 import { customerApi } from '@/shared/api';
 import type { PageResult } from '@/shared/types';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { Select } from '@/shared/ui/Select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
+import { cn } from '@/shared/utils';
+import { AlertCircle, RotateCcw } from 'lucide-react';
 
 interface PriceHistoryItem {
   id: number;
   customer_account_id: number;
   customer_name: string;
-  old_price_difference: string;
-  new_price_difference: string;
+  old_price_difference: string | number | null;
+  new_price_difference: string | number | null;
   effective_date: string;
-  change_reason: string;
+  change_reason: string | null;
   created_at: string;
 }
 
@@ -26,16 +32,37 @@ export default function CustomerPriceChange() {
   const [changeReason, setChangeReason] = useState('');
   const [newContractStartDate, setNewContractStartDate] = useState('');
   const [newContractEndDate, setNewContractEndDate] = useState('');
+
   const [history, setHistory] = useState<PriceHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const pageSize = 20;
+
+  const showMessage = (message: string, type: 'success' | 'error') => {
+    if (type === 'success') {
+      setSuccess(message);
+      setError(null);
+    } else {
+      setError(message);
+      setSuccess(null);
+    }
+    setTimeout(() => {
+      setSuccess(null);
+      setError(null);
+    }, 4000);
+  };
 
   const fetchCustomers = async () => {
     try {
-      const res = await customerApi.simpleList();
-      setCustomers(((res as unknown as { data: CustomerOption[] }).data) || []);
+      const res = (await customerApi.simpleList()) as unknown as {
+        success: boolean;
+        data?: CustomerOption[];
+      };
+      setCustomers(res.data || []);
     } catch {
       setCustomers([]);
     }
@@ -46,10 +73,16 @@ export default function CustomerPriceChange() {
     try {
       const params: Record<string, unknown> = { page, page_size: pageSize };
       if (customerId) params.customer_account_id = Number(customerId);
-      const res = await customerApi.priceHistoryPage(params);
-      const result = res as unknown as { data: PageResult<PriceHistoryItem> };
-      setHistory(result.data.items || []);
-      setTotal(result.data.total || 0);
+      const res = (await customerApi.priceHistoryPage(params)) as unknown as {
+        success: boolean;
+        data?: PageResult<PriceHistoryItem>;
+        message?: string;
+      };
+      if (!res.success) throw new Error(res.message || '加载失败');
+      setHistory(res.data?.items || []);
+      setTotal(res.data?.total || 0);
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : '加载变更历史失败', 'error');
     } finally {
       setLoading(false);
     }
@@ -57,116 +90,189 @@ export default function CustomerPriceChange() {
 
   useEffect(() => {
     fetchCustomers();
+  }, []);
+
+  useEffect(() => {
     fetchHistory();
   }, [page]);
+
+  const customerOptions = [
+    { value: '', label: '全部客户' },
+    ...customers.map((c) => ({ value: String(c.id), label: c.customer_name })),
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerId || !newPriceDifference || !effectiveDate) {
-      alert('请填写必填项');
+      showMessage('请填写必填项', 'error');
       return;
     }
+    setActionLoading(true);
     try {
-      await customerApi.updatePriceAndContract({
+      const res = (await customerApi.updatePriceAndContract({
         customer_account_id: Number(customerId),
         new_price_difference: Number(newPriceDifference),
         effective_date: effectiveDate,
         change_reason: changeReason,
         new_contract_start_date: newContractStartDate || undefined,
         new_contract_end_date: newContractEndDate || undefined,
-      });
+      })) as unknown as { success: boolean; message?: string };
+      if (!res.success) throw new Error(res.message || '价格变更失败');
+      showMessage('价格变更提交成功', 'success');
       setNewPriceDifference('');
       setEffectiveDate('');
       setChangeReason('');
       setNewContractStartDate('');
       setNewContractEndDate('');
-      fetchHistory();
+      await fetchHistory();
     } catch (err) {
-      alert(err instanceof Error ? err.message : '价格变更失败');
+      showMessage(err instanceof Error ? err.message : '价格变更失败', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold text-foreground">价格变更</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>价格变更</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="flex items-center gap-2 rounded-lg border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
+              <RotateCcw size={16} />
+              {success}
+            </div>
+          )}
 
-      <form onSubmit={handleSubmit} className="p-4 rounded-lg border border-border bg-background-secondary space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-sm text-foreground-secondary mb-1">客户 <span className="text-danger">*</span></label>
-            <select required value={customerId} onChange={e => setCustomerId(e.target.value)} className="w-full px-3 py-1.5 rounded-md bg-background border border-border text-sm text-foreground">
-              <option value="">请选择</option>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.customer_name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-foreground-secondary mb-1">新价差 <span className="text-danger">*</span></label>
-            <input required type="number" step="0.0001" value={newPriceDifference} onChange={e => setNewPriceDifference(e.target.value)} className="w-full px-3 py-1.5 rounded-md bg-background border border-border text-sm text-foreground" />
-          </div>
-          <div>
-            <label className="block text-sm text-foreground-secondary mb-1">生效日期 <span className="text-danger">*</span></label>
-            <input required type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} className="w-full px-3 py-1.5 rounded-md bg-background border border-border text-sm text-foreground" />
-          </div>
-          <div>
-            <label className="block text-sm text-foreground-secondary mb-1">新合同开始</label>
-            <input type="date" value={newContractStartDate} onChange={e => setNewContractStartDate(e.target.value)} className="w-full px-3 py-1.5 rounded-md bg-background border border-border text-sm text-foreground" />
-          </div>
-          <div>
-            <label className="block text-sm text-foreground-secondary mb-1">新合同结束</label>
-            <input type="date" value={newContractEndDate} onChange={e => setNewContractEndDate(e.target.value)} className="w-full px-3 py-1.5 rounded-md bg-background border border-border text-sm text-foreground" />
-          </div>
-          <div>
-            <label className="block text-sm text-foreground-secondary mb-1">变更原因</label>
-            <input value={changeReason} onChange={e => setChangeReason(e.target.value)} className="w-full px-3 py-1.5 rounded-md bg-background border border-border text-sm text-foreground" />
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <button type="submit" className="px-4 py-1.5 rounded-md bg-accent text-white text-sm hover:bg-accent-hover">提交变更</button>
-        </div>
-      </form>
+          <form onSubmit={handleSubmit} className="p-4 rounded-lg border border-border bg-background-tertiary/50 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  客户 <span className="text-danger">*</span>
+                </label>
+                <Select
+                  value={customerId}
+                  options={customerOptions}
+                  onChange={(v) => setCustomerId(v)}
+                  searchable
+                />
+              </div>
+              <Input
+                label="新价差"
+                type="number"
+                step="0.0001"
+                required
+                value={newPriceDifference}
+                onChange={(e) => setNewPriceDifference(e.target.value)}
+                placeholder="元/度"
+              />
+              <Input
+                label="生效日期"
+                type="date"
+                required
+                value={effectiveDate}
+                onChange={(e) => setEffectiveDate(e.target.value)}
+              />
+              <Input
+                label="新合同开始"
+                type="date"
+                value={newContractStartDate}
+                onChange={(e) => setNewContractStartDate(e.target.value)}
+              />
+              <Input
+                label="新合同结束"
+                type="date"
+                value={newContractEndDate}
+                onChange={(e) => setNewContractEndDate(e.target.value)}
+              />
+              <Input
+                label="变更原因"
+                value={changeReason}
+                onChange={(e) => setChangeReason(e.target.value)}
+                placeholder="可选"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" isLoading={actionLoading}>
+                提交变更
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-      <div className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">变更历史</h2>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="data-table">
-            <thead className="bg-background-secondary">
-              <tr>
-                <th>客户</th>
-                <th className="text-right">原价差</th>
-                <th className="text-right">新价差</th>
-                <th>生效日期</th>
-                <th>变更原因</th>
-                <th>操作时间</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-foreground-muted">加载中...</td></tr>
-              ) : history.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-foreground-muted">暂无数据</td></tr>
-              ) : history.map(item => (
-                <tr key={item.id} className="hover:bg-background-hover">
-                  <td>{item.customer_name}</td>
-                  <td className="text-right font-mono-num">{item.old_price_difference}</td>
-                  <td className="text-right font-mono-num">{item.new_price_difference}</td>
-                  <td>{item.effective_date}</td>
-                  <td>{item.change_reason || '-'}</td>
-                  <td>{item.created_at}</td>
+      <Card>
+        <CardHeader>
+          <CardTitle>变更历史</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="data-table">
+              <thead className="bg-background-tertiary">
+                <tr>
+                  <th>客户</th>
+                  <th className="text-right">原价差</th>
+                  <th className="text-right">新价差</th>
+                  <th>生效日期</th>
+                  <th>变更原因</th>
+                  <th>操作时间</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex justify-between items-center text-sm text-foreground-secondary">
-          <span>共 {total} 条</span>
-          <div className="flex gap-2">
-            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 rounded border border-border disabled:opacity-40">上一页</button>
-            <span className="px-3 py-1">第 {page} 页</span>
-            <button disabled={page * pageSize >= total} onClick={() => setPage(p => p + 1)} className="px-3 py-1 rounded border border-border disabled:opacity-40">下一页</button>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-foreground-muted">加载中...</td>
+                  </tr>
+                ) : history.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-foreground-muted">暂无数据</td>
+                  </tr>
+                ) : (
+                  history.map((item) => (
+                    <tr key={item.id} className="hover:bg-background-hover">
+                      <td>{item.customer_name}</td>
+                      <td className="text-right font-mono-num">{item.old_price_difference ?? '-'}</td>
+                      <td className="text-right font-mono-num">{item.new_price_difference ?? '-'}</td>
+                      <td>{item.effective_date}</td>
+                      <td>{item.change_reason || '-'}</td>
+                      <td>{item.created_at}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
+
+          <div className="flex justify-between items-center text-sm text-foreground-secondary">
+            <span>共 {total} 条</span>
+            <div className="flex gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="px-3 py-1 rounded border border-border disabled:opacity-40"
+              >
+                上一页
+              </button>
+              <span className="px-3 py-1">第 {page} 页</span>
+              <button
+                disabled={page * pageSize >= total}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1 rounded border border-border disabled:opacity-40"
+              >
+                下一页
+              </button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

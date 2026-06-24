@@ -263,7 +263,7 @@ export default function CustomerList() {
   const handleStatusChange = async (item: Customer, status: number) => {
     setActionLoading(true);
     try {
-      const res = (await customerApi.updateStatus(item.id, String(status) as 'pending_register')) as unknown as {
+      const res = (await customerApi.updateStatus(item.id, status)) as unknown as {
         success: boolean;
         message?: string;
       };

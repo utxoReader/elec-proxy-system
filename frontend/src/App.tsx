@@ -22,6 +22,8 @@ import PriceLayout from '@/pages/price/PriceLayout';
 import BasePricePage from '@/pages/price/BasePricePage';
 import GridPricePage from '@/pages/price/GridPricePage';
 import WholesalePricePage from '@/pages/price/WholesalePricePage';
+import MarketAllocationPricePage from '@/pages/price/MarketAllocationPricePage';
+import OtherFeePage from '@/pages/price/OtherFeePage';
 
 // Customer pages
 import CustomerLayout from '@/pages/customer/CustomerLayout';
@@ -89,8 +91,8 @@ function AuthGate() {
           <Route path="base" element={<BasePricePage />} />
           <Route path="grid" element={<GridPricePage />} />
           <Route path="wholesale" element={<WholesalePricePage />} />
-          <Route path="allocation" element={<div className="p-6"><h1 className="text-xl font-bold">市场分摊价</h1></div>} />
-          <Route path="other" element={<div className="p-6"><h1 className="text-xl font-bold">其他费用</h1></div>} />
+          <Route path="allocation" element={<MarketAllocationPricePage />} />
+          <Route path="other" element={<OtherFeePage />} />
         </Route>
 
         {/* Consumption with tabs */}

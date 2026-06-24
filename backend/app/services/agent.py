@@ -102,6 +102,11 @@ def get_agent_tree(db: Session) -> list:
     return roots
 
 
+def get_agent_raw(db: Session, id: int) -> Optional[Agent]:
+    """Get raw ORM model (not serialized dict)."""
+    return db.query(Agent).filter(Agent.id == id, Agent.deleted_at.is_(None)).first()
+
+
 def get_agent(db: Session, id: int) -> Optional[dict]:
     agent = db.query(Agent).filter(Agent.id == id, Agent.deleted_at.is_(None)).first()
     return _model_to_dict(agent, {"password_hash"})
@@ -127,22 +132,23 @@ def update_agent(db: Session, data: AgentUpdate) -> Optional[dict]:
 
 
 def delete_agent(db: Session, id: int) -> bool:
-    obj = get_agent(db, id)
+    obj = get_agent_raw(db, id)
     if not obj:
         return False
+    # Java 原版不允许删除已签约的代理（status==1）, 先做基础检查
     obj.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return True
 
 
-def update_agent_status(db: Session, id: int, status: int) -> Optional[Agent]:
-    obj = get_agent(db, id)
+def update_agent_status(db: Session, id: int, new_status: int) -> Optional[dict]:
+    obj = get_agent_raw(db, id)
     if not obj:
         return None
-    obj.status = status
+    obj.status = new_status
     db.commit()
     db.refresh(obj)
-    return obj
+    return _model_to_dict(obj, {"password_hash"})
 
 
 # ============ CommissionConfig ============
