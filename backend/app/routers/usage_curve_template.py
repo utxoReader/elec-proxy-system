@@ -204,7 +204,8 @@ def get_hourly_ratios_by_type_with_peak(
 @router.get("/export-excel")
 def export_usage_curve_templates_excel(
     template_type: int = Query(None),
-    enabled: bool = Query(None),
+    status: int = Query(None, description="1=启用, 0=禁用"),
     db: Session = Depends(get_db),
 ):
+    enabled = bool(status) if status is not None else None
     return UsageCurveTemplateService.export_excel(db, template_type, enabled)

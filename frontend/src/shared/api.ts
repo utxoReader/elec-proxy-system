@@ -181,6 +181,16 @@ export const consumptionApi = {
     api.get('/elec/daily-consumption/statistics', { customer_account_id: customerAccountId, data_month: dataMonth }),
   hourlyPage: (params: Record<string, unknown>) =>
     api.get<PageResult<Record<string, unknown>>>('/elec/hourly-consumption/page', params),
+  hourlySubmit24h: (data: Record<string, unknown>) =>
+    api.post('/elec/hourly-consumption/submit-24hour-data', data),
+  hourlySplitFromTOU: (data: Record<string, unknown>) =>
+    api.post('/elec/hourly-consumption/split-from-time-of-use', data),
+  hourlyCustomerMonthData: (params: Record<string, unknown>) =>
+    api.get('/elec/hourly-consumption/customer-month-data', params),
+  hourlyCustomerDaily: (params: Record<string, unknown>) =>
+    api.get('/elec/hourly-consumption/customer-daily', params),
+  hourlyStatistics: (params: Record<string, unknown>) =>
+    api.get('/elec/hourly-consumption/statistics', params),
   point96Page: (params: Record<string, unknown>) =>
     api.get<PageResult<Record<string, unknown>>>('/elec/point96/page', params),
   point96Import: (formData: FormData) =>

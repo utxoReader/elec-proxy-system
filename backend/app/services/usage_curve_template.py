@@ -291,7 +291,6 @@ class UsageCurveTemplateService:
         ]
 
     @staticmethod
-    @staticmethod
     def export_excel(
         db: Session,
         template_type: Optional[int] = None,
@@ -304,11 +303,12 @@ class UsageCurveTemplateService:
         if template_type is not None:
             q = q.filter(UsageCurveTemplate.template_type == template_type)
         if enabled is not None:
-            q = q.filter(UsageCurveTemplate.enabled == (1 if enabled else 0))
+            status_val = 1 if enabled else 0
+            q = q.filter(UsageCurveTemplate.status == status_val)
         templates = q.order_by(UsageCurveTemplate.id).all()
 
         # Build column headers: ID + name fields + 24 hourly ratios
-        headers = ["ID", "模板名称", "模板类型", "尖峰月份", "是否启用"]
+        headers = ["ID", "模板名称", "模板类型", "描述", "是否启用"]
         for i in range(24):
             headers.append(f"H{i:02d}比例")
 
@@ -318,8 +318,8 @@ class UsageCurveTemplateService:
             row = [
                 t.id, t.template_name or "",
                 type_map.get(t.template_type or 0, str(t.template_type or "")),
-                str(t.is_peak_month or 0),
-                "是" if t.enabled else "否",
+                t.description or "",
+                "是" if t.status == 1 else "否",
             ]
             ratios = _extract_ratios(t)
             for i in range(24):
