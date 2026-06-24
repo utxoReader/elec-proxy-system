@@ -1,0 +1,116 @@
+"""Profit calculation models."""
+
+from datetime import date, datetime
+from decimal import Decimal
+
+from sqlalchemy import Integer, String, Numeric, Date, DateTime, Text
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
+from app.models.base import TimestampMixin, SoftDeleteMixin, RegionMixin
+
+
+class CustomerDailyProfit(TimestampMixin, SoftDeleteMixin, RegionMixin, Base):
+    __tablename__ = "elec_customer_daily_profit"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    customer_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    customer_name: Mapped[str | None] = mapped_column(String(100))
+    profit_date: Mapped[date | None] = mapped_column(Date)
+    profit_month: Mapped[str | None] = mapped_column(String(7))
+    agent_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    agent_name: Mapped[str | None] = mapped_column(String(100))
+    parent_agent_id: Mapped[int | None] = mapped_column(Integer)
+    parent_agent_name: Mapped[str | None] = mapped_column(String(100))
+    total_consumption: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    adjustment_consumption: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    retail_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    wholesale_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    market_allocation_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    total_profit: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    agent_commission_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 4))
+    agent_commission_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    agent_tax_type: Mapped[int | None] = mapped_column(Integer)
+    agent_net_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    parent_commission_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 4))
+    parent_commission_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    parent_tax_type: Mapped[int | None] = mapped_column(Integer)
+    parent_net_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    company_commission_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    status: Mapped[int | None] = mapped_column(Integer, default=1)
+    adjustment_status: Mapped[int | None] = mapped_column(Integer, default=0)
+    remark: Mapped[str | None] = mapped_column(Text)
+    price_difference: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+
+
+class CustomerHourlyProfit(TimestampMixin, SoftDeleteMixin, RegionMixin, Base):
+    __tablename__ = "elec_customer_hourly_profit"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    customer_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    customer_name: Mapped[str | None] = mapped_column(String(100))
+    profit_date: Mapped[date | None] = mapped_column(Date)
+    profit_month: Mapped[str | None] = mapped_column(String(7))
+    hour: Mapped[int | None] = mapped_column(Integer)
+    time_start: Mapped[str | None] = mapped_column(String(10))
+    time_end: Mapped[str | None] = mapped_column(String(10))
+    agent_id: Mapped[int | None] = mapped_column(Integer)
+    agent_name: Mapped[str | None] = mapped_column(String(100))
+    time_period: Mapped[int | None] = mapped_column(Integer)
+    time_period_name: Mapped[str | None] = mapped_column(String(10))
+    package_type: Mapped[int | None] = mapped_column(Integer)
+    package_type_name: Mapped[str | None] = mapped_column(String(20))
+    consumption: Mapped[Decimal | None] = mapped_column(Numeric(12, 4))
+    retail_unit_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    wholesale_unit_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    customer_unit_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    market_allocation_unit_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    retail_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    wholesale_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    market_allocation_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    profit: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    price_difference: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    base_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    remark: Mapped[str | None] = mapped_column(Text)
+
+
+class CustomerMonthlyProfit(TimestampMixin, SoftDeleteMixin, RegionMixin, Base):
+    __tablename__ = "elec_customer_monthly_profit"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    customer_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    customer_name: Mapped[str | None] = mapped_column(String(100))
+    profit_month: Mapped[str | None] = mapped_column(String(7))
+    agent_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    agent_name: Mapped[str | None] = mapped_column(String(100))
+    parent_agent_id: Mapped[int | None] = mapped_column(Integer)
+    parent_agent_name: Mapped[str | None] = mapped_column(String(100))
+    total_consumption: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    adjustment_consumption: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    final_consumption: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    retail_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    wholesale_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    market_allocation_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    adjustment_fee: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    total_profit: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    adjusted_total_profit: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    agent_commission_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 4))
+    agent_commission_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    agent_tax_type: Mapped[int | None] = mapped_column(Integer)
+    agent_net_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    parent_commission_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 4))
+    parent_commission_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    parent_tax_type: Mapped[int | None] = mapped_column(Integer)
+    parent_net_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    company_commission_amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 4))
+    status: Mapped[int | None] = mapped_column(Integer, default=1)
+    adjustment_status: Mapped[int | None] = mapped_column(Integer, default=0)
+    settlement_status: Mapped[int | None] = mapped_column(Integer, default=0)
+    adjustment_user_id: Mapped[int | None] = mapped_column(Integer)
+    adjustment_user_name: Mapped[str | None] = mapped_column(String(50))
+    adjustment_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    adjustment_remark: Mapped[str | None] = mapped_column(Text)
+    settlement_user_id: Mapped[int | None] = mapped_column(Integer)
+    settlement_user_name: Mapped[str | None] = mapped_column(String(50))
+    settlement_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    settlement_remark: Mapped[str | None] = mapped_column(Text)
+    data_days_count: Mapped[int | None] = mapped_column(Integer)
+    expected_days_count: Mapped[int | None] = mapped_column(Integer)
+    data_completeness_rate: Mapped[Decimal | None] = mapped_column(Numeric(6, 4))

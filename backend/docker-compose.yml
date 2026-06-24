@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tongye-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tongye
+      POSTGRES_PASSWORD: tongye
+      POSTGRES_DB: tongye
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5434:5432"
+    volumes:
+      - tongye_pgdata:/var/lib/postgresql/data
+      - ./migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tongye -d tongye"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  tongye_pgdata:
