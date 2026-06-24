@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from fastapi.responses import StreamingResponse
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
@@ -283,6 +284,29 @@ def reverse_settle_agent_fees(db: Session, ids: list[int]) -> int:
     ).update({"settlement_status": 1, "settlement_date": None}, synchronize_session=False)
     db.commit()
     return count
+
+
+def export_agents_excel(db: Session) -> StreamingResponse:
+    """Export agent list as Excel."""
+    from app.services.excel_utils import export_to_response
+
+    agents = db.query(Agent).filter(Agent.deleted_at.is_(None)).order_by(Agent.id).all()
+    headers = ["ID", "代理商名称", "联系人", "联系电话", "上级代理商", "状态", "创建时间"]
+    data = []
+    for a in agents:
+        parent_name = ""
+        if a.parent_id:
+            parent = db.query(Agent).filter(Agent.id == a.parent_id).first()
+            if parent:
+                parent_name = parent.name or ""
+        status_map = {1: "启用", 0: "禁用"}
+        data.append([
+            a.id, a.name or "", a.contact_person or "", a.contact_phone or "",
+            parent_name,
+            status_map.get(a.status or 0, "未知"),
+            str(a.created_at or ""),
+        ])
+    return export_to_response(headers, data, "代理商列表.xlsx", "代理商")
 
 
 def get_agent_fee(db: Session, id: int) -> Optional[AgentFee]:

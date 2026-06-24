@@ -13,6 +13,7 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.models.commission import CommissionConfig
@@ -115,6 +116,31 @@ def validate_effective_month(db: Session, effective_month: str, exclude_id: Opti
         return {"valid": False, "message": "该月份已存在分润配置"}
 
     return {"valid": True, "message": "ok"}
+
+
+def export_commission_configs_excel(
+    db: Session, effective_month: Optional[str] = None
+) -> StreamingResponse:
+    """Export commission configs as Excel."""
+    from app.services.excel_utils import export_to_response
+
+    q = db.query(CommissionConfig).filter(CommissionConfig.deleted_at.is_(None))
+    if effective_month:
+        q = q.filter(CommissionConfig.effective_month == effective_month)
+    configs = q.order_by(CommissionConfig.effective_month.desc()).all()
+
+    headers = ["ID", "生效月份", "代理分润(%)", "上级分润(%)", "公司分润(%)", "状态", "备注"]
+    data = []
+    for c in configs:
+        status_map = {1: "启用", 0: "禁用"}
+        data.append([
+            c.id, c.effective_month, float(c.agent_commission_rate or 0),
+            float(c.parent_commission_rate or 0),
+            float(c.company_commission_rate or 0),
+            status_map.get(c.status or 0, "未知"),
+            c.remark or "",
+        ])
+    return export_to_response(headers, data, "分润配置.xlsx", "分润配置")
 
 
 def preview_commission(db: Session, total_profit: Decimal) -> dict:

@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Optional
 
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.crud.base import paginate_query
@@ -290,6 +291,44 @@ class UsageCurveTemplateService:
         ]
 
     @staticmethod
+    @staticmethod
+    def export_excel(
+        db: Session,
+        template_type: Optional[int] = None,
+        enabled: Optional[bool] = None,
+    ) -> StreamingResponse:
+        """Export usage curve templates as Excel."""
+        from app.services.excel_utils import export_to_response
+
+        q = db.query(UsageCurveTemplate).filter(UsageCurveTemplate.deleted_at.is_(None))
+        if template_type is not None:
+            q = q.filter(UsageCurveTemplate.template_type == template_type)
+        if enabled is not None:
+            q = q.filter(UsageCurveTemplate.enabled == (1 if enabled else 0))
+        templates = q.order_by(UsageCurveTemplate.id).all()
+
+        # Build column headers: ID + name fields + 24 hourly ratios
+        headers = ["ID", "模板名称", "模板类型", "尖峰月份", "是否启用"]
+        for i in range(24):
+            headers.append(f"H{i:02d}比例")
+
+        type_map = {1: "一般工商业", 2: "大工业", 3: "农业"}
+        data = []
+        for t in templates:
+            row = [
+                t.id, t.template_name or "",
+                type_map.get(t.template_type or 0, str(t.template_type or "")),
+                str(t.is_peak_month or 0),
+                "是" if t.enabled else "否",
+            ]
+            ratios = _extract_ratios(t)
+            for i in range(24):
+                r = ratios[i] if i < len(ratios) and ratios[i] is not None else None
+                row.append(str(r) if r is not None else "")
+            data.append(row)
+
+        return export_to_response(headers, data, "用电曲线模板.xlsx", "用电曲线", left_align_cols={2, 3})
+
     def get_hourly_ratios_with_peak(
         db: Session, template_id: int, is_peak_month: bool = False
     ) -> Optional[dict]:

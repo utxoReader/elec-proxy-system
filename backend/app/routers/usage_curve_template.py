@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -198,3 +199,12 @@ def get_hourly_ratios_by_type_with_peak(
     """GET /hourly-ratios-by-type-with-peak — ratios + peak flag for all templates of a type."""
     items = UsageCurveTemplateService.get_hourly_ratios_by_type_with_peak(db, template_type, is_peak_month)
     return ApiResponse(data=items)
+
+
+@router.get("/export-excel")
+def export_usage_curve_templates_excel(
+    template_type: int = Query(None),
+    enabled: bool = Query(None),
+    db: Session = Depends(get_db),
+):
+    return UsageCurveTemplateService.export_excel(db, template_type, enabled)

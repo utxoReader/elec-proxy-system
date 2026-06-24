@@ -119,6 +119,14 @@ def preview_commission(
     return ApiResponse(data=data)
 
 
+@router.get("/commission-config/export-excel")
+def export_commission_configs_excel(
+    effective_month: str = Query(None, description="YYYY-MM"),
+    db: Session = Depends(get_db),
+):
+    return svc.export_commission_configs_excel(db, effective_month)
+
+
 # ==================== AgentFee ====================
 
 

@@ -6,6 +6,7 @@ Covers:
 """
 
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -143,4 +144,9 @@ def update_agent_status(
     if not obj:
         return ApiResponse(success=False, message="Not found")
     return ApiResponse(message="Status updated")
+
+
+@router.get("/agent/export-excel")
+def export_agents_excel(db: Session = Depends(get_db)):
+    return svc.export_agents_excel(db)
 
