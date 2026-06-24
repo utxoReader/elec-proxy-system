@@ -329,6 +329,7 @@ class UsageCurveTemplateService:
 
         return export_to_response(headers, data, "用电曲线模板.xlsx", "用电曲线", left_align_cols={2, 3})
 
+    @staticmethod
     def get_hourly_ratios_with_peak(
         db: Session, template_id: int, is_peak_month: bool = False
     ) -> Optional[dict]:
